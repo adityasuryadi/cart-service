@@ -24,10 +24,9 @@ func failOnError(err error, msg string) {
 func main() {
 	db := config.InitDB()
 	cartRepository := repository.NewCartRepository(db)
-	cartService := service.NewCartService(cartRepository)
-	cartController := controller.NewCartController(cartService)
-
 	productRepo := repository.NewProductRepository(db)
+	cartService := service.NewCartService(cartRepository, productRepo)
+	cartController := controller.NewCartController(cartService)
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{

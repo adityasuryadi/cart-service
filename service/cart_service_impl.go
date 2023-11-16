@@ -1,27 +1,27 @@
 package service
 
 import (
+	"errors"
+	"fmt"
+
 	"cart-service/entity"
 	"cart-service/model"
 	"cart-service/repository"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func NewCartService(repository repository.CartRepository) CartService {
+func NewCartService(repository repository.CartRepository, productRepository repository.ProductRepository) CartService {
 	return &CartServiceImpl{
-		repository: repository,
+		repository:  repository,
+		ProductRepo: productRepository,
 	}
 }
 
 type CartServiceImpl struct {
-	repository repository.CartRepository
+	repository  repository.CartRepository
+	ProductRepo repository.ProductRepository
 }
 
 // DecrementQty implements CartService.
@@ -45,7 +45,6 @@ func (service *CartServiceImpl) DecrementQty(id string) (responseCode int, err e
 	cart.Qty = currentQty
 	service.repository.UpdateCart(cart)
 	return 200, nil
-
 }
 
 // IncrementQty implements CartService.
@@ -69,7 +68,6 @@ func (service *CartServiceImpl) IncrementQty(id string) (responseCode int, err e
 	cart.Qty = currentQty
 	service.repository.UpdateCart(cart)
 	return 200, nil
-
 }
 
 // DestroyCart implements CartService.
@@ -105,33 +103,45 @@ func (service *CartServiceImpl) GetUserCart(userId string) (carts []model.CartRe
 
 // AddToCart implements CartService.
 func (service *CartServiceImpl) AddToCart(request *model.InsertCartRequest) (responseCode int, responseCart *model.CartResponse, err error) {
-
 	// get product api
-	url := "http://product_service:5002/product/" + request.ProductId
-	client := resty.New()
-	client.SetTimeout(1 * time.Minute)
-	resp, err := client.R().Get(url)
+	// url := "http://product_service:5002/product/" + request.ProductId
+	// client := resty.New()
+	// client.SetTimeout(1 * time.Minute)
+	// resp, err := client.R().Get(url)
 
-	if resp.IsError() {
-		return 500, nil, err
+	// if resp.IsError() {
+	// 	return 500, nil, err
+	// }
+
+	// response := make(map[string]interface{})
+	// json.Unmarshal(resp.Body(), &response)
+	// data := response["data"].(map[string]interface{})
+
+	// // check validation stock
+	// if data["qty"].(float64) < 1 {
+	// 	return 400, nil, errors.New("out of stock")
+	// }
+
+	product, err := service.ProductRepo.FindProductById(request.ProductId)
+	if err != nil {
+		return 500, nil, errors.New(err.Error())
 	}
 
-	response := make(map[string]interface{})
-	json.Unmarshal(resp.Body(), &response)
-	data := response["data"].(map[string]interface{})
+	if product == nil {
+		return 400, nil, errors.New("product not found")
+	}
 
-	// check validation stock
-	if data["qty"].(float64) < 1 {
+	if product.Qty < 1 {
 		return 400, nil, errors.New("out of stock")
 	}
 
 	// check if product exist on cart,increment if product exist
 	cart, err := service.repository.GetCartByProductId(request.ProductId)
 
-	fmt.Println("cart", err)
 	if !errors.Is(err, gorm.ErrRecordNotFound) && err != nil {
 		return 500, nil, err
 	}
+
 	if cart != nil && err == nil {
 		currentQty := cart.Qty + 1
 		cart.TotalPrice = cart.ProductPrice * float64(currentQty)
@@ -152,14 +162,13 @@ func (service *CartServiceImpl) AddToCart(request *model.InsertCartRequest) (res
 	cart = &entity.Cart{
 		ProductId:    uuid.MustParse(request.ProductId),
 		Email:        request.Email,
-		ProductName:  data["name"].(string),
+		ProductName:  product.Name,
 		Qty:          1,
-		ProductPrice: data["price"].(float64),
+		ProductPrice: product.Price,
 		UserId:       uuid.MustParse(request.UserId),
-		TotalPrice:   data["price"].(float64) * 1,
+		TotalPrice:   product.Price * 1,
 	}
 	entityCart, err := service.repository.Insert(cart)
-
 	if err != nil {
 		return 500, nil, err
 	}
