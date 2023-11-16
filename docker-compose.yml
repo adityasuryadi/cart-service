@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  ### ===================
+  ### APP SERVICE
+  ### ===================
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: cart_service
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    volumes:
+      - ./:/app/
