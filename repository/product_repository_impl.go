@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"log"
-
 	"cart-service/entity"
 
 	"gorm.io/gorm"
@@ -18,6 +16,25 @@ type ProductRepositoryImpl struct {
 	db *gorm.DB
 }
 
+// Delete implements ProductRepository.
+func (repository *ProductRepositoryImpl) Delete(id string) error {
+	var product *entity.Product
+	err := repository.db.Where("id = ?", id).Delete(&product).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Update implements ProductRepository.
+func (repository *ProductRepositoryImpl) Update(product *entity.Product) error {
+	err := repository.db.Save(&product).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // FindProductById implements ProductRepository.
 func (repository *ProductRepositoryImpl) FindProductById(id string) (*entity.Product, error) {
 	var entity *entity.Product
@@ -29,9 +46,10 @@ func (repository *ProductRepositoryImpl) FindProductById(id string) (*entity.Pro
 }
 
 // InsertProduct implements ProductRepository.
-func (repository *ProductRepositoryImpl) InsertProduct(product *entity.Product) {
+func (repository *ProductRepositoryImpl) InsertProduct(product *entity.Product) error {
 	err := repository.db.Create(product).Debug().Error
 	if err != nil {
-		log.Print(err)
+		return err
 	}
+	return nil
 }

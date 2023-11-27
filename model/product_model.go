@@ -14,3 +14,13 @@ type ProductsResponse struct {
 	Qty         int     `json:"qty"`
 	Description string  `json:"description"`
 }
+
+type Handler = func([]byte) error
+
+type RabbitMQConusmerParams struct {
+	WorkerPoolSize int
+	Exchange       string
+	QueueName      string
+	BindingKey     string
+	ConsumerTag    string
+}

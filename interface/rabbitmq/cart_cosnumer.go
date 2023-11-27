@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"cart-service/entity"
+	"cart-service/model"
 	"cart-service/repository"
 	"context"
 	"encoding/json"
@@ -125,20 +126,20 @@ func (c *CartConsumer) worker(ctx context.Context, messages <-chan amqp.Delivery
 	fmt.Println("Deliveries channel closed")
 }
 
-func (c *CartConsumer) StartConsumer(workerPoolSize int, exchange, queueName, bindingKey, consumerTag string) error {
+func (c *CartConsumer) StartConsumer(params model.RabbitMQConusmerParams, handler model.Handler) error {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch, err := c.CreateChannel(exchange, queueName, bindingKey, consumerTag)
+	ch, err := c.CreateChannel(params.Exchange, params.QueueName, params.BindingKey, params.ConsumerTag)
 	if err != nil {
 		return errors.New(err.Error())
 	}
 	defer ch.Close()
 
 	deliveries, err := ch.Consume(
-		queueName,
+		params.QueueName,
 		"",    // consumer
-		true,  // auto-ack
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -148,8 +149,18 @@ func (c *CartConsumer) StartConsumer(workerPoolSize int, exchange, queueName, bi
 		return errors.New("Consume")
 	}
 
-	for i := 0; i < workerPoolSize; i++ {
-		go c.worker(ctx, deliveries)
+	for i := 0; i < params.WorkerPoolSize; i++ {
+		// go c.worker(ctx, deliveries)
+		go func() {
+			for delivery := range deliveries {
+				err := handler(delivery.Body)
+				if err != nil {
+					delivery.Nack(true, true)
+				}
+				delivery.Ack(true)
+			}
+			fmt.Println("Deliveries channel closed")
+		}()
 	}
 
 	chanErr := <-ch.NotifyClose(make(chan *amqp.Error))

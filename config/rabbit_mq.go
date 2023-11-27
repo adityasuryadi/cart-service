@@ -21,7 +21,7 @@ type MqChannel struct {
 	routingKey string
 }
 
-func NewRabbitMqConn(exchange, queue, routingKey string) (*amqp.Connection, error) {
+func NewRabbitMqConn() (*amqp.Connection, error) {
 	return amqp.Dial("amqp://guest:guest@rabbitmq_container:5672/")
 }
 
