@@ -14,3 +14,10 @@ type CartResponse struct {
 	Qty          int     `json:"qty"`
 	TotalPrice   float64 `json:"total_price"`
 }
+
+type UpdateCartRequest struct {
+	ProductId    string
+	ProductName  string
+	ProductPrice float64
+	Qty          int
+}

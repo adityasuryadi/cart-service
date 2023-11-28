@@ -112,6 +112,48 @@ func main() {
 			var product *entity.Product
 			json.Unmarshal(b, &product)
 			err := productService.EditProduct(product)
+
+			cartRequest := &model.UpdateCartRequest{
+				ProductName:  product.Name,
+				ProductId:    product.Id.String(),
+				ProductPrice: product.Price,
+			}
+			cartService.EditCartByProductId(cartRequest)
+
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("StartConsumer: %v", err)
+			cancel()
+		}
+
+	}()
+
+	go func() {
+		// listen delete product
+		exchange := "product.deleted"
+		queue := "product.delete"
+		routingKey := "delete"
+
+		paramsDelete := model.RabbitMQConusmerParams{
+			WorkerPoolSize: 5,
+			Exchange:       exchange,
+			QueueName:      queue,
+			BindingKey:     routingKey,
+			ConsumerTag:    "",
+		}
+		err = cartConsumer.StartConsumer(paramsDelete, func(b []byte) error {
+			var id string
+			json.Unmarshal(b, &id)
+			err := productService.DeleteProduct(id)
+			if err != nil {
+				return err
+			}
+			err = cartService.DeleteCartByProductId(id)
 			if err != nil {
 				return err
 			}

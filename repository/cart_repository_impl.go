@@ -18,10 +18,28 @@ type CartRepositoryImpl struct {
 	db *gorm.DB
 }
 
+// DeletecartsByProductId implements CartRepository.
+func (repository *CartRepositoryImpl) DeletecartsByProductId(id string) error {
+	var cart *entity.Cart
+	err := repository.db.Where("product_id", id).Delete(&cart).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateCartsByProduct implements CartRepository.
+func (repository *CartRepositoryImpl) UpdateCartsByProductId(cart *entity.Cart) error {
+	err := repository.db.Debug().Where("product_id", cart.ProductId).Updates(&entity.Cart{ProductName: cart.ProductName, ProductPrice: cart.ProductPrice}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetCartById implements CartRepository.
 func (repository *CartRepositoryImpl) GetCartById(id string) (cart *entity.Cart, err error) {
 	err = repository.db.First(&cart, "id = ?", id).Debug().Error
-	// err = repository.db.First(&cart, "id = ?", "6709e976-de8a-43e4-9650-d865987916dc").Debug().Error
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +76,7 @@ func (repository *CartRepositoryImpl) UpdateCart(entity *entity.Cart) (*entity.C
 // GetCartByProductId implements CartRepository.
 func (repository *CartRepositoryImpl) GetCartByProductId(productId string) (cart *entity.Cart, err error) {
 	var entity *entity.Cart
-	err = repository.db.Where("product_id", uuid.MustParse(productId)).First(&entity).Error
+	err = repository.db.Where("product_id", uuid.MustParse(productId)).Find(&entity).Error
 	if err != nil {
 		return nil, err
 	}

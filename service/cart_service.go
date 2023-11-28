@@ -8,4 +8,6 @@ type CartService interface {
 	DestroyCart(productId string) (responseCode int, err error)
 	DecrementQty(productId string) (responseCode int, err error)
 	IncrementQty(productId string) (responseCode int, err error)
+	EditCartByProductId(request *model.UpdateCartRequest) error
+	DeleteCartByProductId(id string) error
 }

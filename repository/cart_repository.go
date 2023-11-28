@@ -11,4 +11,6 @@ type CartRepository interface {
 	GetCartById(id string) (cart *entity.Cart, err error)
 	UpdateCart(cart *entity.Cart) (*entity.Cart, error)
 	DeletCart(productId string) error
+	UpdateCartsByProductId(cart *entity.Cart) error
+	DeletecartsByProductId(id string) error
 }

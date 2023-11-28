@@ -24,6 +24,15 @@ type CartServiceImpl struct {
 	ProductRepo repository.ProductRepository
 }
 
+// DeleteCartByProductId implements CartService.
+func (service *CartServiceImpl) DeleteCartByProductId(productId string) error {
+	err := service.repository.DeletecartsByProductId(productId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // DecrementQty implements CartService.
 func (service *CartServiceImpl) DecrementQty(id string) (responseCode int, err error) {
 	cart, err := service.repository.GetCartById(id)
@@ -182,4 +191,18 @@ func (service *CartServiceImpl) AddToCart(request *model.InsertCartRequest) (res
 		TotalPrice:   entityCart.TotalPrice,
 	}
 	return 200, responseCart, nil
+}
+
+func (service *CartServiceImpl) EditCartByProductId(request *model.UpdateCartRequest) error {
+	productId := uuid.MustParse(request.ProductId)
+	cart := &entity.Cart{
+		ProductName:  request.ProductName,
+		ProductId:    productId,
+		ProductPrice: request.ProductPrice,
+	}
+	err := service.repository.UpdateCartsByProductId(cart)
+	if err != nil {
+		return err
+	}
+	return nil
 }

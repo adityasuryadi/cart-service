@@ -57,11 +57,6 @@ func (controller *CartController) AddToCart(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	// if responseCode == 500 {
-	// 	response := model.GetResponse(responseCode, err.Error(), err.Error())
-	// 	return ctx.Status(fiber.StatusInternalServerError).JSON(response)
-	// }
-
 	if responseCode == 200 {
 		response := model.GetResponse(200, cart, "")
 		return ctx.Status(fiber.StatusOK).JSON(response)
